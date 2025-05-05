@@ -21,17 +21,18 @@ from tensorflow.keras.layers import TextVectorization
 import jieba
 import tensorflow as tf
 
-vocab_size=2100 # sql编程
-sequence_length=300 # sql编程
+vocab_size = 2100  # sql编程
+sequence_length = 300  # sql编程
 
-algOpTextEn=['=','<>','>=','<=','>','<','like']
-algOpTextZh=['等于','不等于','大于等于','小于等于','大于','小于','类似于']
-cateOpEn=['=']
-cateOpZh=['为']
+algOpTextEn = ["=", "<>", ">=", "<=", ">", "<", "like"]
+algOpTextZh = ["等于", "不等于", "大于等于", "小于等于", "大于", "小于", "类似于"]
+cateOpEn = ["="]
+cateOpZh = ["为"]
 
-sample={}
+sample = {}
 
-#SQL programming
+# SQL programming
+
 
 def find_all(sub, s):
     index_list = []
@@ -45,174 +46,204 @@ def find_all(sub, s):
     else:
         return [-1]
 
+
 def textReplace(text, s):
-    newtext=text
-    if (s>0):  #requirement preprocessing sql
-        posv = find_all(sample['tablezh'], newtext)
-        pos1= posv[-1]
-        if (pos1>=0):
-            newtext=newtext[:pos1]+newtext[pos1:].replace(sample['tablezh'],'table')
-        latt=len(sample['attribute'])
+    newtext = text
+    if s > 0:  # requirement preprocessing sql
+        posv = find_all(sample["tablezh"], newtext)
+        pos1 = posv[-1]
+        if pos1 >= 0:
+            newtext = newtext[:pos1] + newtext[pos1:].replace(sample["tablezh"], "table")
+        latt = len(sample["attribute"])
         for i in range(latt):
-            pos1 = newtext.find(sample['attribute'][i]['zh'])
-            if (pos1 >= 0):
-                newtext = newtext[:pos1]+newtext[pos1:].replace(sample['attribute'][i]['zh'], 'att'+str(i))
-        #calculate OP processing
-        algOpNum=len(algOpTextZh)
+            pos1 = newtext.find(sample["attribute"][i]["zh"])
+            if pos1 >= 0:
+                newtext = newtext[:pos1] + newtext[pos1:].replace(sample["attribute"][i]["zh"], "att" + str(i))
+        # calculate OP processing
+        algOpNum = len(algOpTextZh)
         for i in range(algOpNum):
-            posv=find_all(algOpTextZh[i], newtext)
-            if (len(posv)==1 and posv[0]<0): continue
+            posv = find_all(algOpTextZh[i], newtext)
+            if len(posv) == 1 and posv[0] < 0:
+                continue
             else:
-                offset=0
-                li=len(algOpTextZh[i])
+                offset = 0
+                li = len(algOpTextZh[i])
                 for j in range(len(posv)):
-                    pos1=posv[j]+offset
-                    if (pos1>0 and newtext[pos1-1:pos1].isdigit() and newtext[pos1+li:pos1+li+1].isdigit()):
-                        pos1+=li
+                    pos1 = posv[j] + offset
+                    if pos1 > 0 and newtext[pos1 - 1 : pos1].isdigit() and newtext[pos1 + li : pos1 + li + 1].isdigit():
+                        pos1 += li
                         for j in range(5):
-                            if (newtext[pos1+j].isdigit()): continue
-                            else: break
-                        digitValue=newtext[pos1:pos1+j]
-                        pos2=newtext[:pos1+j].rfind("att")
-                        if (pos2>=0):
-                            index=newtext[pos2+3:pos1-len(algOpTextZh[i])]
-                            newtext=newtext[:pos1]+newtext[pos1:pos1+j+1].replace(digitValue, "value"+index)+newtext[pos1+j+1:]
-                            offset+=len("value"+index)-len(digitValue)
-                            sample['attribute'][int(index)]['value']=str(digitValue)
+                            if newtext[pos1 + j].isdigit():
+                                continue
+                            else:
+                                break
+                        digitValue = newtext[pos1 : pos1 + j]
+                        pos2 = newtext[: pos1 + j].rfind("att")
+                        if pos2 >= 0:
+                            index = newtext[pos2 + 3 : pos1 - len(algOpTextZh[i])]
+                            newtext = (
+                                newtext[:pos1]
+                                + newtext[pos1 : pos1 + j + 1].replace(digitValue, "value" + index)
+                                + newtext[pos1 + j + 1 :]
+                            )
+                            offset += len("value" + index) - len(digitValue)
+                            sample["attribute"][int(index)]["value"] = str(digitValue)
 
-        #category OP processing
-        cateOpNum=len(cateOpZh)
+        # category OP processing
+        cateOpNum = len(cateOpZh)
         for i in range(cateOpNum):
-            pos1=newtext.find(cateOpZh[i])
-            cateValue=""
-            if (pos1>=0):
-                newtext1=newtext[:pos1]
-                newtext2=newtext[pos1:]
+            pos1 = newtext.find(cateOpZh[i])
+            cateValue = ""
+            if pos1 >= 0:
+                newtext1 = newtext[:pos1]
+                newtext2 = newtext[pos1:]
                 # pos1+=len(cateOpZh[i])
-                pos2=newtext2.find("'")
-                for j in range(1,5):
-                    if (newtext2[pos2+1+j]=="'"): break
-                cateValue=newtext2[pos2+1:pos2+1+j]
+                pos2 = newtext2.find("'")
+                for j in range(1, 5):
+                    if newtext2[pos2 + 1 + j] == "'":
+                        break
+                cateValue = newtext2[pos2 + 1 : pos2 + 1 + j]
                 pos4 = newtext1.rfind("att")
-                if (pos4>=0):
-                    index=newtext1[pos4+3:]
-                    newtext=newtext1+newtext2[pos2-len(cateOpZh[i]):].replace(cateValue, "value"+index)
-                    sample['attribute'][int(index)]['value']="'"+cateValue+"'"
+                if pos4 >= 0:
+                    index = newtext1[pos4 + 3 :]
+                    newtext = newtext1 + newtext2[pos2 - len(cateOpZh[i]) :].replace(cateValue, "value" + index)
+                    sample["attribute"][int(index)]["value"] = "'" + cateValue + "'"
 
-    else:   #sql statement preprocessing
-        pos1=newtext.find(sample['tableen'])
-        if (pos1>=0):
-            newtext=newtext.replace(sample['tableen'],'table')
-        latt=len(sample['attribute'])
+    else:  # sql statement preprocessing
+        pos1 = newtext.find(sample["tableen"])
+        if pos1 >= 0:
+            newtext = newtext.replace(sample["tableen"], "table")
+        latt = len(sample["attribute"])
         for i in range(latt):
-            pos1 = newtext.find(sample['attribute'][i]['en'])
-            if (pos1 >= 0):
-                newtext = newtext.replace(sample['attribute'][i]['en'], 'att'+str(i))
+            pos1 = newtext.find(sample["attribute"][i]["en"])
+            if pos1 >= 0:
+                newtext = newtext.replace(sample["attribute"][i]["en"], "att" + str(i))
 
-        #calculate OP processing
-        algOpNum=len(algOpTextEn)
+        # calculate OP processing
+        algOpNum = len(algOpTextEn)
         for i in range(algOpNum):
-            posv=find_all(algOpTextEn[i], newtext)
-            if (len(posv)==1 and posv[0]<0): continue
+            posv = find_all(algOpTextEn[i], newtext)
+            if len(posv) == 1 and posv[0] < 0:
+                continue
             else:
                 li = len(algOpTextEn[i])
                 for j in range(len(posv)):
-                    pos1=posv[j]
-                    if (pos1>0 and newtext[pos1-1:pos1].isdigit() and (newtext[pos1+li:pos1+li+1].isdigit() or newtext[pos1+li:pos1+li+1]=="'")):
-                        pos1+=li
-                        pos2=newtext[:pos1].rfind("att")
-                        if (pos2>=0):
-                            index=newtext[pos2+3:pos1-len(algOpTextEn[i])]
-                            if (sample['attribute'][int(index)]['type']=='int'):
-                                digitValue= str(sample['attribute'][int(index)]['value'])
-                                newtext=newtext[:pos1]+newtext[pos1:pos1+len(digitValue)+1].replace(digitValue, "value"+index)+newtext[pos1+len(digitValue)+1:]
+                    pos1 = posv[j]
+                    if (
+                        pos1 > 0
+                        and newtext[pos1 - 1 : pos1].isdigit()
+                        and (newtext[pos1 + li : pos1 + li + 1].isdigit() or newtext[pos1 + li : pos1 + li + 1] == "'")
+                    ):
+                        pos1 += li
+                        pos2 = newtext[:pos1].rfind("att")
+                        if pos2 >= 0:
+                            index = newtext[pos2 + 3 : pos1 - len(algOpTextEn[i])]
+                            if sample["attribute"][int(index)]["type"] == "int":
+                                digitValue = str(sample["attribute"][int(index)]["value"])
+                                newtext = (
+                                    newtext[:pos1]
+                                    + newtext[pos1 : pos1 + len(digitValue) + 1].replace(digitValue, "value" + index)
+                                    + newtext[pos1 + len(digitValue) + 1 :]
+                                )
                             else:
-                                cateValue = sample['attribute'][int(index)]['value']
-                                newtext = newtext[:pos1]+newtext[pos1:pos1+len(cateValue)+1].replace(cateValue,"'value" + index + "'")+newtext[pos1+len(cateValue)+1:]
+                                cateValue = sample["attribute"][int(index)]["value"]
+                                newtext = (
+                                    newtext[:pos1]
+                                    + newtext[pos1 : pos1 + len(cateValue) + 1].replace(
+                                        cateValue, "'value" + index + "'"
+                                    )
+                                    + newtext[pos1 + len(cateValue) + 1 :]
+                                )
 
     return newtext
 
 
+def standarizeRequirement(text, sqltext):
+    newtext = "在表格"
+    newsql = "select"
 
-
-def standarizeRequirement(text,sqltext):
-    newtext="在表格"
-    newsql="select"
-
-    textlist = text.split(',')
+    textlist = text.split(",")
     text = textlist[0].strip()
-    pos1 = text.find('表格')
-    pos2 = text.find('(')
-    pos3 = text.find(')')
-    sample['tablezh'] = text[pos1+2:pos2]
-    sample['tableen'] = text[pos2 + 1: pos3]
-    newtexttable='table'+text[pos3+1:]+","
+    pos1 = text.find("表格")
+    pos2 = text.find("(")
+    pos3 = text.find(")")
+    sample["tablezh"] = text[pos1 + 2 : pos2]
+    sample["tableen"] = text[pos2 + 1 : pos3]
+    newtexttable = "table" + text[pos3 + 1 :] + ","
     attnum = len(textlist)
     att = []
-    newtextatt=""
-    for i in range(1,attnum - 1):   #previous attnum -2
+    newtextatt = ""
+    for i in range(1, attnum - 1):  # previous attnum -2
         attelem = {}
         text = textlist[i].strip()
-        if(i==1):
-            pos1=text.find('属性有')
-            text=text[pos1+3:]
-            #newtextatt+= text[:pos1+3]
-        pos2=0
+        if i == 1:
+            pos1 = text.find("属性有")
+            text = text[pos1 + 3 :]
+            # newtextatt+= text[:pos1+3]
+        pos2 = 0
         for j in range(len(text)):
-            if text[j].isascii()==True:
+            if text[j].isascii() == True:
                 break
             else:
-                pos2+=1
-        attelem['zh']=text[:pos2]
+                pos2 += 1
+        attelem["zh"] = text[:pos2]
         temptext = text[pos2:]
-        pos3 = temptext.find('(')
-        attelem['en']=temptext[:pos3]
-        attelem['type'] = temptext[pos3 + 1:-1]
-        attelem['order'] = i
+        pos3 = temptext.find("(")
+        attelem["en"] = temptext[:pos3]
+        attelem["type"] = temptext[pos3 + 1 : -1]
+        attelem["order"] = i
         att.append(attelem)
-        newtextatt+="att"+str(i-1)+","
-    sample['attribute'] = att
+        newtextatt += "att" + str(i - 1) + ","
+    sample["attribute"] = att
 
-    text = textlist[attnum-1].strip()
-    if text.find('sql')>0:
-        newlasttext =textReplace(text, 1)
-        newtext=newtext+newtexttable+newtextatt+newlasttext
-        sqltext =textReplace(sqltext,0)
+    text = textlist[attnum - 1].strip()
+    if text.find("sql") > 0:
+        newlasttext = textReplace(text, 1)
+        newtext = newtext + newtexttable + newtextatt + newlasttext
+        sqltext = textReplace(sqltext, 0)
     else:
-        newtext='输入文本不符合规范'
+        newtext = "输入文本不符合规范"
     return newtext, sqltext
+
 
 def custom_standardization(input_string):  # 自定义标准化函数
     # input_string = input_string.replace('[','')
     # input_string = input_string.replace(']', '')
-    lowercase=tf.strings.lower(input_string)  # 先转成小写
+    lowercase = tf.strings.lower(input_string)  # 先转成小写
     # return lowercase
-    return tf.strings.regex_replace(lowercase,'[\[\]]',"")  # 去掉[和])
+    return tf.strings.regex_replace(lowercase, "[\[\]]", "")  # 去掉[和])
     # return tf.strings.regex_replace(lowercase,f'[{re.escape(strip_chars)}]')  # 保留[和]，去掉¿
 
 
-source_vectorization=TextVectorization(max_tokens=vocab_size,output_mode='int',standardize=custom_standardization, output_sequence_length=sequence_length)
+source_vectorization = TextVectorization(
+    max_tokens=vocab_size, output_mode="int", standardize=custom_standardization, output_sequence_length=sequence_length
+)
 # 源语言（英语）的词嵌入
 
-target_vectorization=TextVectorization(max_tokens=vocab_size,output_mode='int',standardize=custom_standardization, output_sequence_length=sequence_length+1)
+target_vectorization = TextVectorization(
+    max_tokens=vocab_size,
+    output_mode="int",
+    standardize=custom_standardization,
+    output_sequence_length=sequence_length + 1,
+)
 # 目标语言（中文）的词嵌入，生成的中文语句子多了一个词元，因为在训练的时候需要将句子偏移一个时间步
 
-source_vocab_file= "source_vocab.json"
-target_vocab_file= "target_vocab.json"
+source_vocab_file = "source_vocab.json"
+target_vocab_file = "target_vocab.json"
 
-json_file = open(source_vocab_file, 'r', encoding='utf-8')
+json_file = open(source_vocab_file, "r", encoding="utf-8")
 source_vocab = json.load(json_file)
 json_file.close()
 
 source_vectorization.set_vocabulary(source_vocab)
 
-json_file = open(target_vocab_file, 'r', encoding='utf-8')
+json_file = open(target_vocab_file, "r", encoding="utf-8")
 target_vocab = json.load(json_file)
 json_file.close()
 target_vectorization.set_vocabulary(target_vocab)
 
 
-batch_size=32
+batch_size = 32
 
 
 class TransformerEncoder(layers.Layer):
@@ -221,11 +252,12 @@ class TransformerEncoder(layers.Layer):
         self.embed_dim = embed_dim
         self.dense_dim = dense_dim
         self.num_heads = num_heads
-        self.attention = layers.MultiHeadAttention(
-            num_heads=num_heads, key_dim=embed_dim
-        )
+        self.attention = layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)
         self.dense_proj = keras.Sequential(
-            [layers.Dense(dense_dim, activation="relu"), layers.Dense(embed_dim),]
+            [
+                layers.Dense(dense_dim, activation="relu"),
+                layers.Dense(embed_dim),
+            ]
         )
         self.layernorm_1 = layers.LayerNormalization()
         self.layernorm_2 = layers.LayerNormalization()
@@ -234,32 +266,28 @@ class TransformerEncoder(layers.Layer):
     def call(self, inputs, mask=None):
         if mask is not None:
             padding_mask = tf.cast(mask[:, tf.newaxis, :], dtype="int32")
-        attention_output = self.attention(
-            query=inputs, value=inputs, key=inputs, attention_mask=padding_mask
-        )
+        attention_output = self.attention(query=inputs, value=inputs, key=inputs, attention_mask=padding_mask)
         proj_input = self.layernorm_1(inputs + attention_output)
         proj_output = self.dense_proj(proj_input)
         return self.layernorm_2(proj_input + proj_output)
 
     def get_config(self):
-        config=super().get_config()
-        config.update({
-            "embed_dim": self.embed_dim,
-            "num_heads":self.num_heads,
-            "dense_dim":self.dense_dim,
-        })
+        config = super().get_config()
+        config.update(
+            {
+                "embed_dim": self.embed_dim,
+                "num_heads": self.num_heads,
+                "dense_dim": self.dense_dim,
+            }
+        )
         return config
 
 
 class PositionalEmbedding(layers.Layer):
     def __init__(self, sequence_length, vocab_size, embed_dim, **kwargs):
         super().__init__(**kwargs)
-        self.token_embeddings = layers.Embedding(
-            input_dim=vocab_size, output_dim=embed_dim
-        )
-        self.position_embeddings = layers.Embedding(
-            input_dim=sequence_length, output_dim=embed_dim
-        )
+        self.token_embeddings = layers.Embedding(input_dim=vocab_size, output_dim=embed_dim)
+        self.position_embeddings = layers.Embedding(input_dim=sequence_length, output_dim=embed_dim)
         self.sequence_length = sequence_length
         self.vocab_size = vocab_size
         self.embed_dim = embed_dim
@@ -273,13 +301,16 @@ class PositionalEmbedding(layers.Layer):
 
     def compute_mask(self, inputs, mask=None):
         return tf.math.not_equal(inputs, 0)
+
     def get_config(self):
-        config=super().get_config()
-        config.update({
-            "embed_dim":self.embed_dim,
-            "sequence_length": self.sequence_length,
-            "vocab_size":self.vocab_size,
-        })
+        config = super().get_config()
+        config.update(
+            {
+                "embed_dim": self.embed_dim,
+                "sequence_length": self.sequence_length,
+                "vocab_size": self.vocab_size,
+            }
+        )
         return config
 
 
@@ -289,14 +320,13 @@ class TransformerDecoder(layers.Layer):
         self.embed_dim = embed_dim
         self.latent_dim = latent_dim
         self.num_heads = num_heads
-        self.attention_1 = layers.MultiHeadAttention(
-            num_heads=num_heads, key_dim=embed_dim
-        )
-        self.attention_2 = layers.MultiHeadAttention(
-            num_heads=num_heads, key_dim=embed_dim
-        )
+        self.attention_1 = layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)
+        self.attention_2 = layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)
         self.dense_proj = keras.Sequential(
-            [layers.Dense(latent_dim, activation="relu"), layers.Dense(embed_dim),]
+            [
+                layers.Dense(latent_dim, activation="relu"),
+                layers.Dense(embed_dim),
+            ]
         )
         self.layernorm_1 = layers.LayerNormalization()
         self.layernorm_2 = layers.LayerNormalization()
@@ -304,12 +334,14 @@ class TransformerDecoder(layers.Layer):
         self.supports_masking = True
 
     def get_config(self):
-        config=super().get_config()
-        config.update({
-            "embed_dim": self.embed_dim,
-            "num_heads": self.num_heads,
-            "latent_dim": self.latent_dim,
-        })
+        config = super().get_config()
+        config.update(
+            {
+                "embed_dim": self.embed_dim,
+                "num_heads": self.num_heads,
+                "latent_dim": self.latent_dim,
+            }
+        )
         return config
 
     def call(self, inputs, encoder_outputs, mask=None):
@@ -318,9 +350,7 @@ class TransformerDecoder(layers.Layer):
             padding_mask = tf.cast(mask[:, tf.newaxis, :], dtype="int32")
             padding_mask = tf.minimum(padding_mask, causal_mask)
 
-        attention_output_1 = self.attention_1(
-            query=inputs, value=inputs, key=inputs, attention_mask=causal_mask
-        )
+        attention_output_1 = self.attention_1(query=inputs, value=inputs, key=inputs, attention_mask=causal_mask)
         out_1 = self.layernorm_1(inputs + attention_output_1)
 
         attention_output_2 = self.attention_2(
@@ -347,6 +377,7 @@ class TransformerDecoder(layers.Layer):
         )
         return tf.tile(mask, mult)
 
+
 embed_dim = 256
 latent_dim = 2048
 num_heads = 8
@@ -354,102 +385,108 @@ num_heads = 8
 encoder_inputs = keras.Input(shape=(None,), dtype="int64", name="chinese")
 x = PositionalEmbedding(sequence_length, vocab_size, embed_dim)(encoder_inputs)
 encoder_outputs = TransformerEncoder(embed_dim, latent_dim, num_heads)(x)
-#encoder = keras.Model(encoder_inputs, encoder_outputs)
+# encoder = keras.Model(encoder_inputs, encoder_outputs)
 
 decoder_inputs = keras.Input(shape=(None,), dtype="int64", name="sql")
-#encoded_seq_inputs = keras.Input(shape=(None, embed_dim), name="decoder_state_inputs")
+# encoded_seq_inputs = keras.Input(shape=(None, embed_dim), name="decoder_state_inputs")
 x = PositionalEmbedding(sequence_length, vocab_size, embed_dim)(decoder_inputs)
 x = TransformerDecoder(embed_dim, latent_dim, num_heads)(x, encoder_outputs)
 x = layers.Dropout(0.5)(x)
 decoder_outputs = layers.Dense(vocab_size, activation="softmax")(x)
-#decoder = keras.Model([decoder_inputs, encoded_seq_inputs], decoder_outputs)
+# decoder = keras.Model([decoder_inputs, encoded_seq_inputs], decoder_outputs)
 
-#decoder_outputs = decoder([decoder_inputs, encoder_outputs])
-transformer = keras.Model(
-    [encoder_inputs, decoder_inputs], decoder_outputs)
+# decoder_outputs = decoder([decoder_inputs, encoder_outputs])
+transformer = keras.Model([encoder_inputs, decoder_inputs], decoder_outputs)
 
-transformer.compile(
-    optimizer="rmsprop", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
-)
+transformer.compile(optimizer="rmsprop", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
-transformer.load_weights('TransformerSQLModelWeights2.h5')
+transformer.load_weights("TransformerSQLModelWeights2.h5")
 
 import numpy as np
 
 target_index_lookup = dict(zip(range(len(target_vocab)), target_vocab))
-max_decoded_sentence_length = 60  #20
+max_decoded_sentence_length = 60  # 20
+
 
 def decode_sequence(input_sentence):
     tokenized_input_sentence = source_vectorization([input_sentence])
     decoded_sentence = "[start]"
     for i in range(max_decoded_sentence_length):
         tokenized_target_sentence = target_vectorization([decoded_sentence])[:, :-1]
-        #predictions = transformer([tokenized_input_sentence, tokenized_target_sentence])
+        # predictions = transformer([tokenized_input_sentence, tokenized_target_sentence])
         next_token_predictions = transformer.predict([tokenized_input_sentence, tokenized_target_sentence])
 
-        #sampled_token_index = np.argmax(predictions[0, i, :])
+        # sampled_token_index = np.argmax(predictions[0, i, :])
         sampled_token_index = np.argmax(next_token_predictions[0, i, :])
         sampled_token = target_index_lookup[sampled_token_index]
         decoded_sentence += " " + sampled_token
 
         # if sampled_token == "[end]":
-        if sampled_token.find("endend")>=0:
+        if sampled_token.find("endend") >= 0:
             break
     return decoded_sentence
 
 
 def deStandarize(text):
-    tablename=sample['tableen']
-    text1 = text.replace("from table ", "from "+tablename+" ")
-    text=text1
+    tablename = sample["tableen"]
+    text1 = text.replace("from table ", "from " + tablename + " ")
+    text = text1
     try:
-        posv=find_all("att",text)
-        lenatt=len("att")
-        lp=len(posv)
+        posv = find_all("att", text)
+        lenatt = len("att")
+        lp = len(posv)
         postfix = []
-        for i in range(lp): postfix.append(text[posv[i]+lenatt:posv[i] + lenatt+1])
+        for i in range(lp):
+            postfix.append(text[posv[i] + lenatt : posv[i] + lenatt + 1])
         postfix = set(postfix)
-        postfix=list(postfix)
-        offset=0
+        postfix = list(postfix)
+        offset = 0
         for i in range(lp):
-            pos1 = posv[i]+offset
-            if(pos1<0): break
-            for j in range(1,5):
-                if (pos1 >=0 and text[pos1+lenatt+j:pos1+lenatt+j].isdigit()): continue
-                else: break
-            attindex=text[pos1+lenatt:pos1+lenatt+j].strip()
-            if (postfix.count(attindex)<=0):continue
-            atttemp="att"+attindex
-            attname=sample['attribute'][int(attindex)]['en']
-            text = text.replace(" "+atttemp+" ", " "+attname+" ")
-            offset+=len(attname)-len(atttemp)
+            pos1 = posv[i] + offset
+            if pos1 < 0:
+                break
+            for j in range(1, 5):
+                if pos1 >= 0 and text[pos1 + lenatt + j : pos1 + lenatt + j].isdigit():
+                    continue
+                else:
+                    break
+            attindex = text[pos1 + lenatt : pos1 + lenatt + j].strip()
+            if postfix.count(attindex) <= 0:
+                continue
+            atttemp = "att" + attindex
+            attname = sample["attribute"][int(attindex)]["en"]
+            text = text.replace(" " + atttemp + " ", " " + attname + " ")
+            offset += len(attname) - len(atttemp)
 
-        posv=find_all("value",text)
-        lenvalue=len("value")
-        lp=len(posv)
-        offset=0
+        posv = find_all("value", text)
+        lenvalue = len("value")
+        lp = len(posv)
+        offset = 0
         for i in range(lp):
-            pos1 = posv[i]+offset
-            if(pos1<0): break
-            for j in range(1,5):
-                if (pos1 >=0 and text[pos1+lenvalue+j:pos1+lenvalue+j].isdigit()): continue
-                else: break
-            valueindex=text[pos1+lenvalue:pos1+lenvalue+j].strip()
-            valuetemp="value"+valueindex
-            if ('value' in sample['attribute'][int(valueindex)].keys()):
-                valuereal=sample['attribute'][int(valueindex)]['value']
+            pos1 = posv[i] + offset
+            if pos1 < 0:
+                break
+            for j in range(1, 5):
+                if pos1 >= 0 and text[pos1 + lenvalue + j : pos1 + lenvalue + j].isdigit():
+                    continue
+                else:
+                    break
+            valueindex = text[pos1 + lenvalue : pos1 + lenvalue + j].strip()
+            valuetemp = "value" + valueindex
+            if "value" in sample["attribute"][int(valueindex)].keys():
+                valuereal = sample["attribute"][int(valueindex)]["value"]
             else:
-                valuereal="wrongindex"
+                valuereal = "wrongindex"
             text = text.replace(valuetemp, valuereal)
-            offset+=len(valuereal)-len(valuetemp)
+            offset += len(valuereal) - len(valuetemp)
     except:
-        text=text1
+        text = text1
     return text
 
 
 def testtext(text):
-    temptext=text
-    fulltext,sqltext =standarizeRequirement(temptext,"")
+    temptext = text
+    fulltext, sqltext = standarizeRequirement(temptext, "")
     print(fulltext)
     splits = jieba.cut(fulltext.strip(), cut_all=False)
     # splits = [term.encode("utf8", "ignore") for term in splits]
@@ -462,32 +499,31 @@ def testtext(text):
     # translated =translated.replace("startstart","")
     translated = translated.replace("[start]", "")
     # translated = translated.replace("select all ", "select * ")
-    pos=translated.find(" endend")
-    if (pos>=0):
-        translatedtemp=translated[:pos]
+    pos = translated.find(" endend")
+    if pos >= 0:
+        translatedtemp = translated[:pos]
     else:
-        translatedtemp="wrong output"
+        translatedtemp = "wrong output"
 
-    decode_text=deStandarize(translatedtemp)
+    decode_text = deStandarize(translatedtemp)
     decode_text = decode_text.replace("select all ", "select * ")
     return decode_text
 
 
-
 # ES access
-host="localhost:9200"
+host = "localhost:9200"
 es = Elasticsearch(host, maxsize=15)
 
 # BERT model
 maxlen = 200
 
-config_path = 'bert_config.json'
-checkpoint_path = 'bert_model.ckpt'
-dict_path = 'vocab.txt'
+config_path = "bert_config.json"
+checkpoint_path = "bert_model.ckpt"
+dict_path = "vocab.txt"
 
 token_dict = {}
 
-with codecs.open(dict_path, 'r', 'utf8') as reader:
+with codecs.open(dict_path, "r", "utf8") as reader:
     for line in reader:
         token = line.strip()
         token_dict[token] = len(token_dict)
@@ -500,12 +536,14 @@ class OurTokenizer(Tokenizer):
             if c in self._token_dict:
                 R.append(c)
             elif self._is_space(c):
-                R.append('[unused1]') # space类用未经训练的[unused1]表示
+                R.append("[unused1]")  # space类用未经训练的[unused1]表示
             else:
-                R.append('[UNK]') # 剩余的字符是[UNK]
+                R.append("[UNK]")  # 剩余的字符是[UNK]
         return R
 
+
 tokenizer = OurTokenizer(token_dict)
+
 
 class SquadExample:
     def __init__(self, question, context, start_char_idx, answer_text, all_answers):
@@ -514,7 +552,7 @@ class SquadExample:
         self.start_char_idx = start_char_idx
         self.answer_text = answer_text
         self.all_answers = all_answers
-        self.input_ids=[]
+        self.input_ids = []
         self.skip = False
 
     def preprocess(self):
@@ -547,7 +585,7 @@ class SquadExample:
         self.context_token_to_char = tokenized_context
         # Find tokens that were created from answer characters
         ans_token_idx = []
-        for i in range(start_char_idx,end_char_idx):
+        for i in range(start_char_idx, end_char_idx):
             ans_token_idx.append(i)
         # for idx in tokenized_context:
         #     if sum(is_char_in_ans[start_char_idx:end_char_idx]) > 0:
@@ -564,21 +602,16 @@ class SquadExample:
         # Tokenize question
         tokenized_question = tokenizer.encode(question)[0]
 
-
         # Create inputs
         self.input_ids = tokenized_context + tokenized_question[1:]
-        self.token_type_ids = [0] * len(tokenized_context) + [1] * len(
-            tokenized_question[1:]
-        )
+        self.token_type_ids = [0] * len(tokenized_context) + [1] * len(tokenized_question[1:])
         self.attention_mask = [1] * len(self.input_ids)
-        if (len(self.input_ids)>maxlen):
+        if len(self.input_ids) > maxlen:
             dist = 20
             a = maxlen - len(tokenized_question[1:])
-            if (a > self.start_token_idx + dist and a > self.end_token_idx + dist):
-                self.input_ids = tokenized_context[:a - 1] + tokenized_question[1:]
-                self.token_type_ids = [0] * len(tokenized_context[0:a - 1]) + [1] * len(
-                    tokenized_question[1:]
-                )
+            if a > self.start_token_idx + dist and a > self.end_token_idx + dist:
+                self.input_ids = tokenized_context[: a - 1] + tokenized_question[1:]
+                self.token_type_ids = [0] * len(tokenized_context[0 : a - 1]) + [1] * len(tokenized_question[1:])
                 self.attention_mask = [1] * len(self.input_ids)
 
         # Pad and create attention masks.
@@ -586,7 +619,7 @@ class SquadExample:
 
         padding_length = maxlen - len(self.input_ids)
         if padding_length > 0:  # pad
-            self.input_ids =self.input_ids + [0] * padding_length
+            self.input_ids = self.input_ids + [0] * padding_length
             self.attention_mask = self.attention_mask + [0] * padding_length
             self.token_type_ids = self.token_type_ids + [0] * padding_length
             return
@@ -620,15 +653,16 @@ def create_inputs_targets(squad_examples):
 
 bert_model = load_trained_model_from_checkpoint(config_path, checkpoint_path, seq_len=None)
 for l in bert_model.layers:
-   l.trainable = True
+    l.trainable = True
+
 
 ##QA model
 def create_QA_model():
-    input_ids = Input(shape=(None,)) # 待识别句子输入
-    token_type_ids = Input(shape=(None,)) # 待识别句子输入
-    attention_mask = Input(shape=(None,)) # 实体左边界（标签）
+    input_ids = Input(shape=(None,))  # 待识别句子输入
+    token_type_ids = Input(shape=(None,))  # 待识别句子输入
+    attention_mask = Input(shape=(None,))  # 实体左边界（标签）
     # embedding = bert_model([input_ids, token_type_ids, attention_mask])
-    x_mask = Lambda(lambda x: K.cast(K.greater(K.expand_dims(x, 2), 0), 'float32'))(input_ids)
+    x_mask = Lambda(lambda x: K.cast(K.greater(K.expand_dims(x, 2), 0), "float32"))(input_ids)
 
     embedding = bert_model([input_ids, token_type_ids])
 
@@ -637,7 +671,7 @@ def create_QA_model():
     start_logits = Lambda(lambda x: x[0][..., 0] - (1 - x[1][..., 0]) * 1e10)([start_logits, x_mask])
 
     end_logits = Dense(1, name="end_logit", use_bias=False)(embedding)
-    #end_logits = Flatten()(end_logits)
+    # end_logits = Flatten()(end_logits)
     end_logits = Lambda(lambda x: x[0][..., 0] - (1 - x[1][..., 0]) * 1e10)([end_logits, x_mask])
 
     start_probs = Activation(keras.activations.softmax)(start_logits)
@@ -652,58 +686,60 @@ def create_QA_model():
     train_model.compile(optimizer=qaoptimizer, loss=[qaloss, qaloss])
     return train_model
 
+
 keras.backend.clear_session()
 QAmodel = create_QA_model()
-QAmodel.load_weights('ChineseQAweights.hdf5')
+QAmodel.load_weights("ChineseQAweights.hdf5")
 
 
 bert_model2 = load_trained_model_from_checkpoint(config_path, checkpoint_path, seq_len=None)
 for l in bert_model2.layers:
-   l.trainable = True
+    l.trainable = True
 
-#similar sentence
+
+# similar sentence
 def create_model():
     x1_in = Input(shape=(None,))
     x2_in = Input(shape=(None,))
 
     x = bert_model2([x1_in, x2_in])
     x = Lambda(lambda x: x[:, 0])(x)
-    simp = Dense(1, activation='sigmoid')(x)
+    simp = Dense(1, activation="sigmoid")(x)
 
     sim_model = keras.Model([x1_in, x2_in], simp)
     sim_model.compile(
-        loss='binary_crossentropy',
-        optimizer=Adam(1e-5), # 用足够小的学习率
-        metrics=['accuracy']
+        loss="binary_crossentropy",
+        optimizer=Adam(1e-5),  # 用足够小的学习率
+        metrics=["accuracy"],
     )
     return sim_model
 
+
 keras.backend.clear_session()
 simSentModel = create_model()
-simSentModel.load_weights('ChineseSimSentWeights.hdf5')
+simSentModel.load_weights("ChineseSimSentWeights.hdf5")
 
-def predict_similar_text(senttext1,senttext2):
+
+def predict_similar_text(senttext1, senttext2):
     # 利用BERT进行tokenize
     senttext1 = senttext1[:maxlen]
     senttext2 = senttext2[:maxlen]
 
-    x1, x2 = tokenizer.encode(first=senttext1,second=senttext2)
+    x1, x2 = tokenizer.encode(first=senttext1, second=senttext2)
     X1 = x1 + [0] * (maxlen - len(x1)) if len(x1) < maxlen else x1
     X2 = x2 + [0] * (maxlen - len(x2)) if len(x2) < maxlen else x2
 
     # 模型预测并输出预测结果
     predicted = simSentModel.predict([np.array([X1]), np.array([X2])])[0]
-    y1=predicted[0]
-    print(senttext2+":"+str(y1))
+    y1 = predicted[0]
+    print(senttext2 + ":" + str(y1))
     return y1
 
 
-
-
 # 对单句话进行预测
-def predict_single_text(text1,text2):
+def predict_single_text(text1, text2):
     # 利用BERT进行tokenize
-    pred_ans=""
+    pred_ans = ""
     squad_examples = []
     context = text1
     question = text2
@@ -713,7 +749,7 @@ def predict_single_text(text1,text2):
     start_char_idx = 1
     squad_eg = SquadExample(question, context, start_char_idx, answer_text, all_answers)
     squad_eg.preprocess()
-    if (squad_eg.skip == False):
+    if squad_eg.skip == False:
         squad_examples.append(squad_eg)
 
     x_test, y_test = create_inputs_targets(squad_examples)
@@ -726,7 +762,7 @@ def predict_single_text(text1,text2):
         print(start)
         print(end)
         # adjust the answer scope
-        if (start > end):
+        if start > end:
             temp = end
             end = start
             start = temp - 1
@@ -746,8 +782,6 @@ def predict_single_text(text1,text2):
     return pred_ans
 
 
-
-
 def es_search_body(value, key):
     """
     将传参封装为es查询的body，可根据实际需求，判断是否新增此函数
@@ -755,95 +789,88 @@ def es_search_body(value, key):
     :param key:
     :return:
     """
-    body = {
-        "_source": ["question", "answer"],
-        "query": {
-            "match": {
-                key: value
-            }
-        }
-    }
+    body = {"_source": ["question", "answer"], "query": {"match": {key: value}}}
     return body
 
+
 def checkSimilarQuestion(quesstr):
-    returnText="在问答库中没有找到答案"
-    key="question"
-    senttext1=quesstr   #"解释exists查询的作用"
-    bd=es_search_body(senttext1, key)
-    print(senttext1)	
-    results=es.search(body=bd,index='courseqa')
-    l=len(results['hits']['hits'])
-    print(l)	
+    returnText = "在问答库中没有找到答案"
+    key = "question"
+    senttext1 = quesstr  # "解释exists查询的作用"
+    bd = es_search_body(senttext1, key)
+    print(senttext1)
+    results = es.search(body=bd, index="courseqa")
+    l = len(results["hits"]["hits"])
+    print(l)
     for i in range(l):
-        senttext2=results['hits']['hits'][i]['_source']['question']
-        y=predict_similar_text(senttext1, senttext2)
-        if(y>=0.8):
-            print(senttext2+"  score: "+str(y))
-            returnText=results['hits']['hits'][i]['_source']['answer']+"  （来自问答："+senttext2+" )"
+        senttext2 = results["hits"]["hits"][i]["_source"]["question"]
+        y = predict_similar_text(senttext1, senttext2)
+        if y >= 0.8:
+            print(senttext2 + "  score: " + str(y))
+            returnText = results["hits"]["hits"][i]["_source"]["answer"] + "  （来自问答：" + senttext2 + " )"
             print(returnText)
-            break       
+            break
     return returnText
 
 
-
 def outputStr(instr):
-    text=instr.strip()
+    text = instr.strip()
     rstr = "请把问题再描述详细一点。"
-    sqlpos=text.find("sql语句")
-    tablepos=text.find("在表格")
+    sqlpos = text.find("sql语句")
+    tablepos = text.find("在表格")
     print(sqlpos)
-    if(sqlpos>=0 and tablepos>=0):
+    if sqlpos >= 0 and tablepos >= 0:
         rstr = testtext(text)
-        return rstr		
-    pos=text.find("问答库")
-    print(pos)
-    if (pos>=0):
-        rstr=checkSimilarQuestion(text)
         return rstr
-    if(len(text)>2):
-        text2=text.split("问")
-        ques=text2[-1]
-        text1=text2[:-1]
-        pos=text1[0].rfind("。")
-        context=text1[0][0:pos+1]
-        rstr=predict_single_text(context,ques)
-        print(context+" : "+ques)
+    pos = text.find("问答库")
+    print(pos)
+    if pos >= 0:
+        rstr = checkSimilarQuestion(text)
+        return rstr
+    if len(text) > 2:
+        text2 = text.split("问")
+        ques = text2[-1]
+        text1 = text2[:-1]
+        pos = text1[0].rfind("。")
+        context = text1[0][0 : pos + 1]
+        rstr = predict_single_text(context, ques)
+        print(context + " : " + ques)
     return rstr
 
 
-
-#load models in the first time
-text="解释exists查询的作用"
-rstr=checkSimilarQuestion(text)
+# load models in the first time
+text = "解释exists查询的作用"
+rstr = checkSimilarQuestion(text)
 text1 = "在Transformer中，多头自注意力用于表示输入序列和输出序列，不过解码器必须通过掩蔽机制来保留自回归属性。Transformer的优点是并行性非常好，符合目前的硬件（主要指GPU）环境。"
 text2 = "Transformer有什么优点？"
-rstr=predict_single_text(text1,text2)
-
+rstr = predict_single_text(text1, text2)
 
 
 # Create your views here.
 
+
 @csrf_exempt
 def getanswer(request):
- print("start getanswer:")
- post_content=json.loads(request.body, encoding='utf-8')['content']
-# post_content = json.loads(request.body, encoding='utf-8')['content']
- print(type(post_content))
- post_content=outputStr(post_content)
- print(post_content)
-# return JsonResponse({'content1': 'post请求'+post_content})
- return HttpResponse(post_content)
+    print("start getanswer:")
+    post_content = json.loads(request.body, encoding="utf-8")["content"]
+    # post_content = json.loads(request.body, encoding='utf-8')['content']
+    print(type(post_content))
+    post_content = outputStr(post_content)
+    print(post_content)
+    # return JsonResponse({'content1': 'post请求'+post_content})
+    return HttpResponse(post_content)
+
 
 def index(request):
-    #name = "Hello DTL!"
+    # name = "Hello DTL!"
     data = {}
-    data['name'] = "Tanch"
-    data['message'] = "你好"
+    data["name"] = "Tanch"
+    data["message"] = "你好"
     # return render(request,"模板文件路径",context={字典格式:要在客户端中展示的数据})
     # context是个字典
-    #return render(request,"./index.html",context={"name":name})
-    return render(request,"./index.html",data)
+    # return render(request,"./index.html",context={"name":name})
+    return render(request, "./index.html", data)
 
 
 def book_list(request):
-	return HttpResponse("book content")
+    return HttpResponse("book content")
