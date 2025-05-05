@@ -858,7 +858,7 @@ def getanswer(request):
     post_content = outputStr(post_content)
     print(post_content)
     # return JsonResponse({'content1': 'post请求'+post_content})
-    return HttpResponse(post_content)
+    return JsonResponse({'content': post_content}, safe=False)
 
 
 def index(request):
