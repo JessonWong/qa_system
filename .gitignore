@@ -1,0 +1,8 @@
+*.hdf5
+*.ckpt.*
+.python-version
+pyproject.toml
+uv.lock
+README.md
+*.pyc
+__pycache__/
