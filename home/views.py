@@ -2,48 +2,10 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 import json
 from django.http import HttpResponse
-from django.http import JsonResponse
-
-import numpy as np
-from tensorflow import keras
-from keras_bert import load_trained_model_from_checkpoint, Tokenizer
-import codecs
-from keras.layers import *
-from keras import backend as K
-from keras.models import Model
-from keras.optimizers import Adam
-from elasticsearch import Elasticsearch
-import requests
+# Removed unused imports and Elasticsearch related code
 
 from .services.sql_generator import generate_sql
-
-# ES access
-host = "localhost:9200"
-es = Elasticsearch(host, maxsize=15)
-
-
-def es_search_body(value, key):
-    body = {"_source": ["question", "answer"], "query": {"match": {key: value}}}
-    return body
-
-
-def checkSimilarQuestion(quesstr):
-    returnText = "在问答库中没有找到答案"
-    key = "question"
-    senttext1 = quesstr
-    bd = es_search_body(senttext1, key)
-    try:
-        results = es.search(body=bd, index="courseqa")
-        hits = results.get("hits", {}).get("hits", [])
-        for hit in hits:
-            if "_source" in hit and "question" in hit["_source"]:
-                senttext2 = hit["_source"]["question"]
-                returnText = hit["_source"]["answer"] + f" （来自问答：{senttext2}）"
-                break
-    except Exception as e:
-        print(f"Error during Elasticsearch search: {e}")
-        returnText = "在问答库中检索时发生错误。"
-    return returnText
+from .services.es_search import checkSimilarQuestion  # Import from the new module
 
 
 def outputStr(instr):
@@ -63,6 +25,7 @@ def outputStr(instr):
     pos = text.find("问答库")
     if pos >= 0:
         try:
+            # Call the imported function
             rstr = checkSimilarQuestion(text)
         except Exception as e:
             print(f"Error in Elasticsearch QA: {e}")
