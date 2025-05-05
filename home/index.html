@@ -67,12 +67,13 @@
         return axios.request({
             method: "POST",
             url:"http://localhost:8000/getanswer/",
-            data:{content:this.content}
+            data:{content:this.content},
+            responseType: 'json'
         })
       },
 	async sygetanswer(){
 		let response=await this.getanswer()
-		this.answers=response.data
+		this.answers=response.data.content
 	},
 	addQuestion() {
 		this.content=form1.content.value
