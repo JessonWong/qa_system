@@ -3,7 +3,9 @@ import torch
 import numpy as np
 from transformers import BertTokenizer, BertModel
 from sklearn.metrics.pairwise import cosine_similarity
+import os
 
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 def load_dataset(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
