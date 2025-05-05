@@ -360,36 +360,36 @@
 # #     return returnText
 
 
-def outputStr(instr):
-    text = instr.strip()
-    rstr = "请把问题再描述详细一点。"
-    sqlpos = text.find("sql语句")
-    tablepos = text.find("在表格")
-    print(sqlpos)
-    if sqlpos >= 0 and tablepos >= 0:
-        rstr = testtext(text)
-        return rstr
-    pos = text.find("问答库")
-    print(pos)
-    if pos >= 0:
-        rstr = checkSimilarQuestion(text)
-        return rstr
-    if len(text) > 2:
-        text2 = text.split("问")
-        ques = text2[-1]
-        text1 = text2[:-1]
+# def outputStr(instr):
+#     text = instr.strip()
+#     rstr = "请把问题再描述详细一点。"
+#     sqlpos = text.find("sql语句")
+#     tablepos = text.find("在表格")
+#     print(sqlpos)
+#     if sqlpos >= 0 and tablepos >= 0:
+#         rstr = testtext(text)
+#         return rstr
+#     pos = text.find("问答库")
+#     print(pos)
+#     if pos >= 0:
+#         rstr = checkSimilarQuestion(text)
+#         return rstr
+#     if len(text) > 2:
+#         text2 = text.split("问")
+#         ques = text2[-1]
+#         text1 = text2[:-1]
         
-        # 处理没有"问"字符的情况
-        if len(text1) == 0:
-            # 直接将整个文本作为问题，没有上下文
-            rstr = checkSimilarQuestion(text)
-            return rstr
+#         # 处理没有"问"字符的情况
+#         if len(text1) == 0:
+#             # 直接将整个文本作为问题，没有上下文
+#             rstr = checkSimilarQuestion(text)
+#             return rstr
             
-        pos = text1[0].rfind("。")
-        context = text1[0][0 : pos + 1]
-        rstr = predict_single_text(context, ques)
-        print(context + " : " + ques)
-    return rstr
+#         pos = text1[0].rfind("。")
+#         context = text1[0][0 : pos + 1]
+#         rstr = predict_single_text(context, ques)
+#         print(context + " : " + ques)
+#     return rstr
 
 
 # # # load models in the first time
@@ -446,7 +446,7 @@ from .services.bert_qa_extractor import predict_single_text
 @csrf_exempt
 def index(request):
     """Renders the main chat interface."""
-    return render(request, "home/index.html")  # Assuming index.html is the main page
+    return render(request, "index.html")  # Assuming index.html is the main page
 
 
 # Removed unused book_list function
