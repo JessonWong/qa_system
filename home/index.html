@@ -1,150 +1,467 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>机器问答</title>
-	<link rel="stylesheet" href="../static/style.css">
-</head>
-<body>
-<!--    <h1>来自模板的内容</h1>
-    <p>name : {{name}}</p>
-    <p>message : {{message}}</p>  -->
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智能问答系统</title>
+    <link
+      href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-color: #4a6cfa;
+        --secondary-color: #e9eeff;
+        --text-color: #333;
+        --light-text: #666;
+        --bg-color: #f9f9fb;
+        --accent-color: #ff6b6b;
+        --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        --border-radius: 12px;
+      }
 
-<table width="800" height="70" border="0" align="center" cellpadding="0" cellspacing="0" bgcolor="#666666">
-  <thead>
-    <tr>
-      <td width="14%" align="center" bgcolor="#FFFFFF"><img src="../static/chat.jpg" width="70" height="74"></td>
-      <td width="86%" align="center" bgcolor="#FFFFFF"><h2>       机器问答<h2>   </td>
-    </tr>
-  </thead>
-</table>
-<br>
-<div id="app">
-<table width="800" border="1" align="center" cellpadding="0" cellspacing="0" bordercolor="#FFFFFF" bordercolorlight="#666666" bordercolordark="#FFFFFF" id="comment">
-  <tr>
-	<td width="14%" height="27" align="center" bgcolor="#E5BB93">人-机</td>
-	<td width="86%" align="center" bgcolor="#E5BB93">问答内容</td>
-  </tr>
-</table>
-<form name="form1" method="post" action="">    
-  <table width="800" height="122" border="0" align="center" cellpadding="0" cellspacing="0">
-    <tr>
-      <td width="100" height="14">&nbsp;</td>
-      <td width="700">&nbsp;</td>
-    </tr>
-    <tr hidden="true">
-      <td height="27" align="center">评 论 人：</td>
-      <td>
-        <input name="person" type="text" id="person" size="40">
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "PingFang SC", "Microsoft YaHei", -apple-system,
+          BlinkMacSystemFont, sans-serif;
+      }
 
-      </td>
-    </tr>
-    <tr>
-      <td align="center">提问内容：</td>
-      <td><textarea name="content" cols="80" rows="6" id="content"></textarea></td>
-      <td><button @click.prevent="answerQuestion" type="submit" width="20">提交</button></td>
-    </tr>
-  </table>
-  </form>
-</div>
-</body>
-<script src="../static/vue.min.js"></script>
-<script src="../static/axios.min.js"></script>
-<script type="text/javascript">
-  var vm = new Vue({
-    el:'#app',
-    data:{
-      content:"",  //提问内容
-      answers:"",  //答案
-      results:[]  //搜索结果
-    },
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
-    },
-    methods:{
-      getanswer(){
-        var content = this.content;
-        return axios.request({
-            method: "POST",
-            url:"http://localhost:8000/getanswer/",
-            data:{content:this.content}
-        })
-      },
-	async sygetanswer(){
-		let response=await this.getanswer()
-		this.answers=response.data
-	},
-	addQuestion() {
-		this.content=form1.content.value
-		console.log(this.content);
-		//创建TextNode节点
-		//var person = document.createTextNode(form1.person.value);
-		var person = document.createElement("img");
-		person.src="../static/question.png"
-		var content = document.createTextNode(form1.content.value);	
-		//创建td类型的Element节点
-		var td_person = document.createElement("td"); 
-		td_person.align="center"
-		td_person.height="27"
-		var td_content = document.createElement("td");	
-		var tr = document.createElement("tr"); //创建一个tr类型的Element节点
-		var tbody = document.createElement("tbody"); //创建一个tbody类型的Element节点
-		//将TextNode节点加入到td类型的节点中
-		td_person.appendChild(person);
-		td_content.appendChild(content);	
-		//将td类型的节点添加到tr节点中
-		tr.appendChild(td_person);
-		tr.appendChild(td_content);	
-		tbody.appendChild(tr); //将tr节点加入tbody中
-		var tComment = document.getElementById("comment"); //获取table对象
-		tComment.appendChild(tbody); //将节点tbody加入节点尾部
-		form1.person.value="";	//清空评论人文本框
-		form1.content.value="";		//清空评论内容文本框
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        line-height: 1.6;
+        padding: 20px;
+      }
 
-	},
-	addAnswer() {
-		//创建TextNode节点
-		//var person = document.createTextNode(form1.person.value);
-		var person = document.createElement("img");
-		person.src="../static/answer.png"
-		console.log("in addanswer");
-            console.log(this.answers);
-		var content = document.createTextNode(this.answers);	
-		//创建td类型的Element节点
-		var td_person = document.createElement("td"); 
-		td_person.align="center"
-		td_person.height="27"
-		var td_content = document.createElement("td");	
-		var tr = document.createElement("tr"); //创建一个tr类型的Element节点
-		tr.bgcolor="#666666"
-		var tbody = document.createElement("tbody"); //创建一个tbody类型的Element节点
-		//将TextNode节点加入到td类型的节点中
-		td_person.appendChild(person);
-		td_content.appendChild(content);	
-		//将td类型的节点添加到tr节点中
-		tr.appendChild(td_person);
-		tr.appendChild(td_content);	
-		tbody.appendChild(tr); //将tr节点加入tbody中
-		var blank_tr=document.createElement("tr"); 
-		blank_tr.border="0" 
-		tbody.appendChild(blank_tr); 
-		var tComment = document.getElementById("comment"); //获取table对象
-		tComment.appendChild(tbody); //将节点tbody加入节点尾部
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+      }
 
-	},
-	fnA(){
-		this.sygetanswer();
-		console.log(this.answers);
-		this.addAnswer();
-	},
-	answerQuestion() {
-		this.addQuestion();
-		this.sygetanswer();
-		setTimeout(this.fnA, 4000);
-            //console.log(this.answers);
-		//this.addAnswer();
-	}
-    }
-  })
-</script>
+      .header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 30px;
+        background: white;
+        padding: 20px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+      }
+
+      .header-logo {
+        width: 60px;
+        height: 60px;
+        margin-right: 20px;
+        border-radius: 50%;
+        overflow: hidden;
+      }
+
+      .header-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .header-title {
+        color: var(--primary-color);
+        font-size: 26px;
+        font-weight: bold;
+      }
+
+      .chat-container {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        height: 500px;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
+        overflow: hidden;
+      }
+
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+      }
+
+      .message {
+        display: flex;
+        margin-bottom: 20px;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 12px;
+        flex-shrink: 0;
+      }
+
+      .message-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .message-content {
+        background: var(--secondary-color);
+        padding: 12px 16px;
+        border-radius: 18px;
+        max-width: 80%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .message.user {
+        flex-direction: row-reverse;
+      }
+
+      .message.user .message-avatar {
+        margin-right: 0;
+        margin-left: 12px;
+      }
+
+      .message.user .message-content {
+        background: var(--primary-color);
+        color: white;
+      }
+
+      .message.ai .message-content {
+        border-top-left-radius: 4px;
+      }
+
+      .message.user .message-content {
+        border-top-right-radius: 4px;
+      }
+
+      .input-container {
+        background: white;
+        padding: 20px;
+        border-top: 1px solid #eee;
+        display: flex;
+        align-items: center;
+      }
+
+      .input-field {
+        flex: 1;
+        border: 2px solid #eee;
+        border-radius: 24px;
+        padding: 12px 20px;
+        font-size: 16px;
+        transition: all 0.3s;
+        outline: none;
+        resize: none;
+        height: 60px;
+        max-height: 120px;
+      }
+
+      .input-field:focus {
+        border-color: var(--primary-color);
+      }
+
+      .send-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        margin-left: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+      }
+
+      .send-btn:hover {
+        background: #3a5be8;
+        transform: scale(1.05);
+      }
+
+      .send-btn:active {
+        transform: scale(0.95);
+      }
+
+      .system-message {
+        text-align: center;
+        margin: 15px 0;
+        color: var(--light-text);
+        font-size: 14px;
+      }
+
+      .typing-indicator {
+        display: flex;
+        align-items: center;
+        padding: 8px 16px;
+        background: var(--secondary-color);
+        border-radius: 18px;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .typing-dot {
+        width: 8px;
+        height: 8px;
+        background: #666;
+        border-radius: 50%;
+        margin: 0 2px;
+        animation: typingAnimation 1s infinite ease-in-out;
+      }
+
+      .typing-dot:nth-child(1) {
+        animation-delay: 0s;
+      }
+      .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+
+      @keyframes typingAnimation {
+        0%,
+        60%,
+        100% {
+          transform: translateY(0);
+        }
+        30% {
+          transform: translateY(-6px);
+        }
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 20px;
+        color: var(--light-text);
+        font-size: 14px;
+      }
+
+      /* 响应式设计 */
+      @media (max-width: 768px) {
+        .container {
+          padding: 10px;
+        }
+
+        .header {
+          padding: 15px;
+        }
+
+        .header-logo {
+          width: 40px;
+          height: 40px;
+        }
+
+        .header-title {
+          font-size: 20px;
+        }
+
+        .message-content {
+          max-width: 90%;
+        }
+
+        .input-field {
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="container">
+      <div class="header">
+        <div class="header-logo">
+          <img src="../static/chat.jpg" alt="智能问答系统Logo" />
+        </div>
+        <h1 class="header-title">智能问答系统</h1>
+      </div>
+
+      <div class="chat-container">
+        <div class="chat-messages" ref="messageContainer">
+          <div class="system-message">欢迎使用智能问答系统，请输入您的问题</div>
+
+          <div
+            v-for="(message, index) in messageList"
+            :key="index"
+            :class="['message', message.type]"
+          >
+            <div class="message-avatar">
+              <img
+                :src="message.type === 'user' ? '../static/question.png' : '../static/answer.png'"
+                :alt="message.type === 'user' ? '用户' : 'AI'"
+              />
+            </div>
+            <div
+              class="message-content"
+              v-html="formatMessage(message.content)"
+            ></div>
+          </div>
+
+          <div v-if="isTyping" class="message ai">
+            <div class="message-avatar">
+              <img src="../static/answer.png" alt="AI" />
+            </div>
+            <div class="typing-indicator">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-container">
+          <textarea
+            class="input-field"
+            v-model="userInput"
+            placeholder="请输入您的问题..."
+            @keydown.enter.prevent="sendMessage"
+            ref="inputField"
+            rows="1"
+            @input="autoResize"
+          ></textarea>
+          <button
+            class="send-btn"
+            @click="sendMessage"
+            :disabled="isProcessing"
+          >
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>© 2024 智能问答系统 - 基于深度学习技术</p>
+        <p>陈沅昕 郭灿 王之宪 潘非 薛源</p>
+      </div>
+    </div>
+
+    <script src="../static/vue.min.js"></script>
+    <script src="../static/axios.min.js"></script>
+    <script>
+      new Vue({
+        el: "#app",
+        data: {
+          userInput: "",
+          messageList: [],
+          isTyping: false,
+          isProcessing: false,
+        },
+        mounted() {
+          // 添加示例欢迎消息
+          this.messageList.push({
+            type: "ai",
+            content: "您好！我是智能问答助手。请问有什么可以帮助您的吗？",
+          });
+
+          // 聚焦输入框
+          this.$refs.inputField.focus();
+        },
+        updated() {
+          // 每次更新后滚动到底部
+          this.scrollToBottom();
+        },
+        methods: {
+          sendMessage() {
+            const message = this.userInput.trim();
+            if (!message || this.isProcessing) return;
+
+            // 添加用户消息
+            this.messageList.push({
+              type: "user",
+              content: message,
+            });
+
+            // 清空输入框并重置高度
+            this.userInput = "";
+            this.$refs.inputField.style.height = "auto";
+
+            // 显示正在输入状态
+            this.isTyping = true;
+            this.isProcessing = true;
+
+            // 发送到后端
+            this.getAnswer(message);
+          },
+
+          async getAnswer(message) {
+            try {
+              const response = await axios.request({
+                method: "POST",
+                url: "http://localhost:8000/getanswer/",
+                data: { content: message },
+                responseType: "json",
+              });
+
+              // 延迟一下，模拟思考时间，提升用户体验
+              setTimeout(() => {
+                this.isTyping = false;
+
+                // 添加AI回复
+                this.messageList.push({
+                  type: "ai",
+                  content:
+                    response.data.content || "抱歉，我无法理解您的问题。",
+                });
+
+                this.isProcessing = false;
+              }, 1000);
+            } catch (error) {
+              console.error("获取答案时出错:", error);
+
+              setTimeout(() => {
+                this.isTyping = false;
+
+                // 添加错误消息
+                this.messageList.push({
+                  type: "ai",
+                  content:
+                    "抱歉，系统处理您的问题时出错，请尝试重新提问或换一种提问方式。",
+                });
+
+                this.isProcessing = false;
+              }, 1000);
+            }
+          },
+
+          scrollToBottom() {
+            this.$nextTick(() => {
+              const container = this.$refs.messageContainer;
+              container.scrollTop = container.scrollHeight;
+            });
+          },
+
+          autoResize(event) {
+            const textarea = event.target;
+            textarea.style.height = "auto";
+            textarea.style.height =
+              textarea.scrollHeight < 120
+                ? textarea.scrollHeight + "px"
+                : "120px";
+          },
+
+          formatMessage(text) {
+            // 将URL转换为可点击的链接
+            return text.replace(
+              /(https?:\/\/[^\s]+)/g,
+              '<a href="$1" target="_blank" style="color: #4a6cfa; text-decoration: underline;">$1</a>'
+            );
+          },
+        },
+      });
+    </script>
+  </body>
 </html>
