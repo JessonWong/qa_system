@@ -72,8 +72,13 @@
         })
       },
 	async sygetanswer(){
-		let response=await this.getanswer()
-		this.answers=response.data.content
+		try {
+			let response=await this.getanswer()
+			this.answers=response.data.content
+		} catch(error) {
+			console.error("获取答案时出错:", error);
+			this.answers="抱歉，系统处理您的问题时出错，请尝试重新提问或换一种提问方式。";
+		}
 	},
 	addQuestion() {
 		this.content=form1.content.value

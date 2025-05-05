@@ -831,6 +831,13 @@ def outputStr(instr):
         text2 = text.split("问")
         ques = text2[-1]
         text1 = text2[:-1]
+        
+        # 处理没有"问"字符的情况
+        if len(text1) == 0:
+            # 直接将整个文本作为问题，没有上下文
+            rstr = checkSimilarQuestion(text)
+            return rstr
+            
         pos = text1[0].rfind("。")
         context = text1[0][0 : pos + 1]
         rstr = predict_single_text(context, ques)
