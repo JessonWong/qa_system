@@ -378,13 +378,13 @@
 #         text2 = text.split("问")
 #         ques = text2[-1]
 #         text1 = text2[:-1]
-        
+
 #         # 处理没有"问"字符的情况
 #         if len(text1) == 0:
 #             # 直接将整个文本作为问题，没有上下文
 #             rstr = checkSimilarQuestion(text)
 #             return rstr
-            
+
 #         pos = text1[0].rfind("。")
 #         context = text1[0][0 : pos + 1]
 #         rstr = predict_single_text(context, ques)
@@ -429,6 +429,7 @@
 # # def book_list(request):
 # #     return HttpResponse("book content")
 
+from .apps import HiroConfig
 
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -440,7 +441,46 @@ from .services.sql_generator import generate_sql
 from .services.es_search import checkSimilarQuestion
 from .services.bert_qa_extractor import predict_single_text
 
-# Removed unused outputStr function and commented-out BERT code
+
+def collect_answer(candidate_answers):
+    all_candidates_string = ""
+
+    # 或者存储每个候选答案单独的字符串表示在一个列表中
+    candidate_strings_list = []
+
+    for i, answer in enumerate(candidate_answers[:10]):
+        # 构建当前候选答案的字符串表示
+        current_answer_string = f"候选答案 #{i + 1}:\n"
+        current_answer_string += f"问题: {answer['question_text']}, ID: {answer['question_id']}\n"
+        current_answer_string += f"问题相似度: {answer['question_similarity']:.4f}\n"
+        current_answer_string += f"答案类型: {answer['answer_type']} (权重: {answer['answer_type_weight']:.2f})\n"
+        current_answer_string += f"综合置信度: {answer['confidence']:.4f}\n"
+
+        # 如果有增强的答案，则添加增强答案的信息
+        if answer["enhanced"] and answer["enhanced_answer"]:
+            current_answer_string += f"原始答案: {answer['answer_text']}\n"
+            current_answer_string += f"增强后的答案: {answer['enhanced_answer']}\n"
+        else:
+            current_answer_string += f"答案: {answer['answer_text']}\n"
+
+        current_answer_string += "-" * 70 + "\n"  # 添加分隔线和换行
+
+        # 将当前候选答案的字符串添加到总字符串 或 列表中
+        all_candidates_string += current_answer_string + "\n"  # 在每个答案之间加个空行
+        candidate_strings_list.append(current_answer_string)
+
+    # 现在，all_candidates_string 包含所有候选答案组合成的一个大字符串
+    # candidate_strings_list 是一个列表，每个元素是单个候选答案的字符串表示
+
+    # 你可以在循环结束后打印这些字符串，或者将它们用于其他用途 (比如在 Django View 中返回)
+
+    # 示例：打印最终的字符串
+    # print(all_candidates_string)
+
+    # 示例：在 Django View 中返回 (假设在 getanswer 函数里)
+    # return JsonResponse({"answer": all_candidates_string}) # 返回一个包含所有答案字符串的大字符串
+    print(all_candidates_string)  # 打印所有候选答案的字符串表示
+    return all_candidates_string
 
 
 @csrf_exempt
@@ -462,25 +502,45 @@ def getanswer(request):
         try:
             # Assuming the question comes in JSON format: {'question': 'user question'}
             data = json.loads(request.body)
-            question = data.get("question", "").strip()
-            context = data.get("context", None)  # Optional context for text QA
+            content = data.get("content", "").strip()
+            # question = data.get("question", "").strip()
+            # context = data.get("context", None)  # Optional context for text QA
 
-            if not question:
-                return JsonResponse({"answer": "请输入问题。"})
+            if not content:
+                return JsonResponse({"answer": "请输入问题。"}, status=400)
 
-            answer = "抱歉，无法处理您的问题。"  # Default answer
+            if content.startswith("增强"):
+                if content.startswith("增强问答"):
+                    query = content.split("问答")[-1].strip()
+                    print(f"增强问答查询: {query}")
+                    candidate_answers = HiroConfig.qa_system.get_answers(query, top_k_questions=5)
+                    # print(f"增强问答候选答案: {candidate_answers}")
+                returnText = collect_answer(candidate_answers)
+                return JsonResponse({"answer": returnText})
 
-            # --- Logic to determine which service to call ---
-            if question.startswith("在表格"):
-                # Assume it's a request for SQL generation
-                answer = generate_sql(question)
-            elif context:
-                # If context is provided, use the BERT QA extractor
-                answer = predict_single_text(context, question)
             else:
-                # Default to searching the QA database
-                # The checkSimilarQuestion function already handles the "问答库" prefix internally
-                answer = checkSimilarQuestion(question)
+                if content.startswith("sql语句"):
+                    # SQL generation request
+                    answer = generate_sql(content)
+                elif content.startswith("问答库"):
+                    # Elasticsearch search request
+                    answer = checkSimilarQuestion(content)
+            # if not question:
+            #     return JsonResponse({"answer": "请输入问题。"})
+
+            # answer = "抱歉，无法处理您的问题。"  # Default answer
+
+            # # --- Logic to determine which service to call ---
+            # if question.startswith("在表格"):
+            #     # Assume it's a request for SQL generation
+            #     answer = generate_sql(question)
+            # elif context:
+            #     # If context is provided, use the BERT QA extractor
+            #     answer = predict_single_text(context, question)
+            # else:
+            #     # Default to searching the QA database
+            #     # The checkSimilarQuestion function already handles the "问答库" prefix internally
+            #     answer = checkSimilarQuestion(question)
 
             return JsonResponse({"answer": answer})
 

@@ -131,7 +131,6 @@ class BertQuestionAnswering:
     ):
         if es is False:
             self.data = load_dataset(data_path)
-            pass
         else:
             self.es = ESSearcher(es_hosts=["localhost:9200"], index_name="courseqa")
             if not self.es.is_connected():
@@ -151,7 +150,6 @@ class BertQuestionAnswering:
         query_embedding = self.encoder.encode([query])
         similarities = cosine_similarity(query_embedding, self.question_embeddings)[0]
         top_indices = similarities.argsort()[-top_k_questions:][::-1]
-
         all_candidate_answers = []
 
         for idx in top_indices:
@@ -228,39 +226,40 @@ class BertQuestionAnswering:
         return question_data
 
 
-def main():
-    # 创建问答系统，启用本地Llama模型增强
-    qa_system = BertQuestionAnswering(
-        "data_database.json",
-        use_llm_enhancement=False,
-        # llm_model_path="Qwen/Qwen2.5-0.5B-Instruct",  # 替换为你的本地模型路径
-        device="cuda",  # 如果没有GPU，可以设置为"cpu"
-    )
+# def main():
+#     # 创建问答系统，启用本地Llama模型增强
+#     qa_system = BertQuestionAnswering(
+#         es=True,
+#         # "data_database.json",
+#         use_llm_enhancement=False,
+#         # llm_model_path="Qwen/Qwen2.5-0.5B-Instruct",  # 替换为你的本地模型路径
+#         device="cuda",  # 如果没有GPU，可以设置为"cpu"
+#     )
 
-    queries = ["数据库事务是什么？", "索引有什么用？", "什么是数据库范式？"]
+#     queries = ["数据库事务是什么？", "索引有什么用？", "什么是数据库范式？"]
 
-    for query in queries:
-        print(f"\n查询: {query}")
-        print("=" * 70)
+#     for query in queries:
+#         print(f"\n查询: {query}")
+#         print("=" * 70)
 
-        candidate_answers = qa_system.get_answers(query, top_k_questions=5)
+#         candidate_answers = qa_system.get_answers(query, top_k_questions=5)
 
-        for i, answer in enumerate(candidate_answers[:10]):
-            print(f"候选答案 #{i + 1}:")
-            print(f"问题: {answer['question_text']}")
-            print(f"问题相似度: {answer['question_similarity']:.4f}")
-            print(f"答案类型: {answer['answer_type']} (权重: {answer['answer_type_weight']:.2f})")
-            print(f"综合置信度: {answer['confidence']:.4f}")
+#         for i, answer in enumerate(candidate_answers[:10]):
+#             print(f"候选答案 #{i + 1}:")
+#             print(f"问题: {answer['question_text']}, ID: {answer['question_id']}")
+#             print(f"问题相似度: {answer['question_similarity']:.4f}")
+#             print(f"答案类型: {answer['answer_type']} (权重: {answer['answer_type_weight']:.2f})")
+#             print(f"综合置信度: {answer['confidence']:.4f}")
 
-            # 如果有增强的答案，则显示增强答案
-            if answer["enhanced"] and answer["enhanced_answer"]:
-                print("原始答案:", answer["answer_text"])
-                print("\n增强后的答案:", answer["enhanced_answer"])
-            else:
-                print(f"答案: {answer['answer_text']}")
+#             # 如果有增强的答案，则显示增强答案
+#             if answer["enhanced"] and answer["enhanced_answer"]:
+#                 print("原始答案:", answer["answer_text"])
+#                 print("\n增强后的答案:", answer["enhanced_answer"])
+#             else:
+#                 print(f"答案: {answer['answer_text']}")
 
-            print("-" * 70)
+#             print("-" * 70)
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

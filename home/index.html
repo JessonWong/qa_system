@@ -414,7 +414,7 @@
                 this.messageList.push({
                   type: "ai",
                   content:
-                    response.data.content || "抱歉，我无法理解您的问题。",
+                    response.data.answer || "抱歉，我无法理解您的问题。",
                 });
 
                 this.isProcessing = false;
