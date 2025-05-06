@@ -480,7 +480,7 @@ def collect_answer(candidate_answers):
     # 示例：在 Django View 中返回 (假设在 getanswer 函数里)
     # return JsonResponse({"answer": all_candidates_string}) # 返回一个包含所有答案字符串的大字符串
     print(all_candidates_string)  # 打印所有候选答案的字符串表示
-    return all_candidates_string
+    return all_candidates_string.replace("\n", "<br>")
 
 
 @csrf_exempt
