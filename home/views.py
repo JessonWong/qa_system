@@ -451,9 +451,11 @@ def collect_answer(candidate_answers):
     for i, answer in enumerate(candidate_answers[:10]):
         # 构建当前候选答案的字符串表示
         current_answer_string = f"候选答案 #{i + 1}:\n"
-        current_answer_string += f"问题: {answer['question_text']}, ID: {answer['question_id']}\n"
+        current_answer_string += f"问题: {answer['question_text']}\n"
+        current_answer_string += f"问题ID: {answer['question_id']}\n"
         current_answer_string += f"问题相似度: {answer['question_similarity']:.4f}\n"
         current_answer_string += f"答案类型: {answer['answer_type']} (权重: {answer['answer_type_weight']:.2f})\n"
+        current_answer_string += f"答案ID: {answer['answer_id']}\n"
         current_answer_string += f"综合置信度: {answer['confidence']:.4f}\n"
 
         # 如果有增强的答案，则添加增强答案的信息
